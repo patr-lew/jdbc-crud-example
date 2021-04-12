@@ -1,0 +1,3 @@
+solar-database-url=jdbc://localhost:3306/solar_system?useSSL=false
+solar-database-user=root
+solar-database-password=coderslab
