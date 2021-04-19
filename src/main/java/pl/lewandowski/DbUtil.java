@@ -19,22 +19,11 @@ public class DbUtil {
     private final String DB_USER;
     private final String DB_PASS;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DbUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(DbUtil.class);
 
 
     public DbUtil() throws IOException {
-        Path config = Paths.get("db-connection.txt");
-        Map<String, String> configMap = Files.readAllLines(config).stream()
-                .map(line -> new AbstractMap.SimpleEntry<>(
-                        line.substring(0, line.indexOf('=')).trim(),
-                        line.substring(line.indexOf('=') + 1).trim()))
-                .collect(Collectors.toMap(
-                        AbstractMap.SimpleEntry::getKey,
-                        AbstractMap.SimpleEntry::getValue));
-
-        if (LOGGER.isTraceEnabled()) {
-            configMap.forEach((key, value) -> LOGGER.trace("new config entry with key '{}' and value '{}' created", key, value));
-        }
+        Map<String, String> configMap = getDbAccessFromFile();
 
 
         if (configMap.containsKey("solar-database-url")) {
@@ -55,6 +44,25 @@ public class DbUtil {
             throw new IOException("Database password not found");
         }
 
+    }
+
+    /**
+     * A method to extract DB credentials from db-connection.txt file.
+    */
+    private Map<String, String> getDbAccessFromFile() throws IOException {
+        Path config = Paths.get("db-connection.txt");
+        Map<String, String> configMap = Files.readAllLines(config).stream()
+                .map(line -> new AbstractMap.SimpleEntry<>(
+                        line.substring(0, line.indexOf('=')).trim(),
+                        line.substring(line.indexOf('=') + 1).trim()))
+                .collect(Collectors.toMap(
+                        AbstractMap.SimpleEntry::getKey,
+                        AbstractMap.SimpleEntry::getValue));
+
+        if (log.isTraceEnabled()) {
+            configMap.forEach((key, value) -> log.trace("new config entry with key '{}' and value '{}' created", key, value));
+        }
+        return configMap;
     }
 
 
