@@ -19,8 +19,6 @@ public class PlanetDao {
     private static final String UPDATE_PLANET_QUERY
             = "UPDATE solar_system.planet SET `name` = ?, `biggest_moon` = ?, `solar_day` = ?, `distance_sun` = ? WHERE `id` = ?";
     private static final String DELETE_PLANET_QUERY = "DELETE FROM solar_system.planet WHERE `id` = ?";
-//    private static final String FIND_ALL_QUERY = "SELECT id, username, email, password FROM users WHERE column LIKE ?";
-//    private static final String[] COLUMNS = {"id", "username", "email", "password"};
 
     private static final Logger log = LoggerFactory.getLogger(PlanetDao.class);
     private final DbUtil dbUtil;
@@ -29,7 +27,7 @@ public class PlanetDao {
         this.dbUtil = dbUtil;
     }
 
-    public Optional<Planet> create(Planet planet) {
+    public void create(Planet planet) {
         try (Connection connection = dbUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(CREATE_PLANET_QUERY)) {
 
@@ -45,7 +43,6 @@ public class PlanetDao {
                 Long id = result.getLong(1);
                 planet.setId(id);
                 log.debug("Planet {} inserted into database with id = {}", planet.getName(), id);
-                return Optional.of(planet);
             } else {
                 throw new SQLException("Adding planet to the database unsuccessful");
             }
@@ -53,8 +50,6 @@ public class PlanetDao {
         } catch (SQLException e) {
             log.error(e.getMessage());
         }
-
-        return Optional.empty();
     }
 
     public Optional<Planet> read(long id) {
@@ -72,7 +67,7 @@ public class PlanetDao {
                 planet.setSolarDay(result.getDouble("solar_day"));
                 planet.setDistanceSun(result.getLong("distance_sun"));
 
-                log.debug("Planet {} with id = {} read from the solar_system database",planet.getName(), id);
+                log.debug("Planet {} with id = {} read from the solar_system database", planet.getName(), id);
                 return Optional.of(planet);
             } else {
                 log.info("Planet with id = {} doesn't exist in the solar_system database", id);
@@ -86,7 +81,7 @@ public class PlanetDao {
 
     public void update(Planet planet) {
         try (Connection connection = dbUtil.getConnection();
-        PreparedStatement statement = connection.prepareStatement(UPDATE_PLANET_QUERY)) {
+             PreparedStatement statement = connection.prepareStatement(UPDATE_PLANET_QUERY)) {
             statement.setString(1, planet.getName());
             statement.setString(2, planet.getBiggestMoon());
             statement.setDouble(3, planet.getSolarDay());
@@ -101,20 +96,19 @@ public class PlanetDao {
                 log.error("Update of planet {}, id = {} unsuccessful", planet.getName(), planet.getId());
             }
 
-
         } catch (SQLException e) {
             log.error(e.getMessage());
         }
     }
 
     public void delete(long id) {
-        if(read(id).equals(Optional.empty())) {
+        if (read(id).equals(Optional.empty())) {
             log.info("Planet under id {} doesn't exist. Deletion unsuccessful.", id);
             return;
         }
 
         try (Connection connection = dbUtil.getConnection();
-        PreparedStatement statement = connection.prepareStatement(DELETE_PLANET_QUERY)) {
+             PreparedStatement statement = connection.prepareStatement(DELETE_PLANET_QUERY)) {
             statement.setLong(1, id);
             statement.executeUpdate();
 

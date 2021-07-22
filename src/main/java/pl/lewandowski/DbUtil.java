@@ -1,5 +1,7 @@
 package pl.lewandowski;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,16 +17,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DbUtil {
+    private volatile static DbUtil instance;
     private final String DB_URL;
     private final String DB_USER;
     private final String DB_PASS;
 
+    private HikariConfig config = new HikariConfig();
+    private HikariDataSource dataSource;
+
     private static final Logger log = LoggerFactory.getLogger(DbUtil.class);
 
-
-    public DbUtil() throws IOException {
+    private DbUtil() throws IOException {
         Map<String, String> configMap = getDbAccessFromFile();
-
 
         if (configMap.containsKey("solar-database-url")) {
             this.DB_URL = configMap.get("solar-database-url");
@@ -44,11 +48,30 @@ public class DbUtil {
             throw new IOException("Database password not found");
         }
 
+        config.setJdbcUrl(DB_URL);
+        config.setUsername(DB_USER);
+        config.setPassword(DB_PASS);
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        dataSource = new HikariDataSource(config);
     }
 
-    /**
-     * A method to extract DB credentials from db-connection.txt file.
-    */
+    public static DbUtil getInstance() throws IOException{
+        if (instance == null) {
+            synchronized (DbUtil.class) {
+                if (instance == null) {
+                    instance = new DbUtil();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    }
+
     private Map<String, String> getDbAccessFromFile() throws IOException {
         Path config = Paths.get("db-connection.txt");
         Map<String, String> configMap = Files.readAllLines(config).stream()
@@ -65,8 +88,4 @@ public class DbUtil {
         return configMap;
     }
 
-
-    public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-    }
 }
